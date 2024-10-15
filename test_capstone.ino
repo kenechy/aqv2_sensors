@@ -91,7 +91,7 @@ void loop() {
 
     static bool locationFetched = false;
 
-    if (timeClient.getMinutes() % 2 == 0 && timeClient.getSeconds() == 0 && !locationFetched) {
+    if (timeClient.getMinutes() % 5 == 0 && timeClient.getSeconds() == 0 && !locationFetched) {
         Serial.println("Fetching location...");
         fetchLocation();
 
@@ -101,7 +101,7 @@ void loop() {
         locationFetched = true;
     }
 
-    if (timeClient.getMinutes() % 2 != 0) {
+    if (timeClient.getMinutes() % 5 != 0) {
         locationFetched = false;
     }
 
@@ -232,9 +232,7 @@ void sendData() {
                 jsonPayload += "\"pm25remarks\":\"" + getPM25Remarks(pm25) + "\",";
                 jsonPayload += "\"pm10\":" + String(pm10) + ",";
                 jsonPayload += "\"pm10remarks\":\"" + getPM10Remarks(pm10) + "\",";
-            } else {
-                jsonPayload += "\"pm25\":null, \"pm25remarks\":null, \"pm10\":null, \"pm10remarks\":null,";
-            }
+            } 
         }
 
         // --- Temperature and Humidity Data ---
@@ -245,10 +243,7 @@ void sendData() {
             jsonPayload += "\"temperature_remarks\":\"" + getTemperatureRemarks(temperature) + "\",";
             jsonPayload += "\"humidity\":" + String(humidity) + ",";
             jsonPayload += "\"humidity_remarks\":\"" + getHumidityRemarks(humidity) + "\",";
-        } else {
-            jsonPayload += "\"temperature\":null, \"temperature_remarks\":null,";
-            jsonPayload += "\"humidity\":null, \"humidity_remarks\":null,";
-        }
+        } 
 
         // --- Oxygen Level Data ---
         uint8_t numReadings = 1; // Change this number if you want more readings
@@ -256,16 +251,21 @@ void sendData() {
         if (!isnan(oxygenLevel)) {
             jsonPayload += "\"oxygen_concentration\":" + String(oxygenLevel) + ",";
             jsonPayload += "\"oxygen_remarks\":\"" + getOxygenRemarks(oxygenLevel) + "\"";
-        } else {
-            jsonPayload += "\"oxygen\":null, \"oxygen_remarks\":null";
-        }
-
+        } 
         jsonPayload += "}";
 
-        sendDataToServer(jsonPayload, sensorsApiUrl);
+        Serial.println(jsonPayload);
+
+        bool success = sendDataToServer(jsonPayload, sensorsApiUrl);
+        if (success) {
+          Serial.println("Data sent successfully");
+        } else {
+          Serial.println("Failed to send data");
+        }
+      
     } else {
-        Serial.println("WiFi is not connected. Cannot send data.");
-    }
+    Serial.println("WiFi not connected, skipping data send.");
+  }
 }
 
 
@@ -330,7 +330,7 @@ String getHumidityRemarks(float humidity) {
 }
 
 String getTemperatureRemarks(float temperature) {
-  if (temperature >= 27 && temperature <= 37) {
+  if (temperature >= 13 && temperature <= 37) {
     return "Good";
   } else if (temperature > 33 && temperature <= 41) {
     return "Caution";
