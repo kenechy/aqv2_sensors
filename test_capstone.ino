@@ -24,11 +24,11 @@ const char* ssid = "FTTx_579D";
 const char* password = "9D78579D";
 
 // URLs for your Supabase tables
-String sensorsApiUrl = "https://kohjcrdirmvamsjcefew.supabase.co/rest/v1/tblsensors";
+String sensorsApiUrl = "https://kohjcrdirmvamsjcefew.supabase.co/rest/v1/sensors";
 // API Key
 String apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvaGpjcmRpcm12YW1zamNlZmV3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyNzMzMDYxMywiZXhwIjoyMDQyOTA2NjEzfQ.dcjFj_XWSg_Zq8BJQSnI_SfqzjtuG98cu3nZSIzgfBo";
 String location = "";
-int device_id = 2;
+int locationId = 3;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "asia.pool.ntp.org", 8 * 3600, 60000); // Use "asia.pool.ntp.org" for Philippines
@@ -149,7 +149,7 @@ void syncTime() {
 }
 
 void fetchLocation() {
-    String deviceUrl = "https://kohjcrdirmvamsjcefew.supabase.co/rest/v1/tbldevice?device_id=eq." + String(device_id);
+    String deviceUrl = "https://kohjcrdirmvamsjcefew.supabase.co/rest/v1/locations?locationId=eq." + String(locationId);
     HTTPClient http;
     http.begin(deviceUrl);
     http.addHeader("apikey", apiKey);
@@ -212,8 +212,8 @@ bool sendDataToServer(const String& data, const String& apiUrl) {
 void sendData() {
     if (WiFi.status() == WL_CONNECTED) {
         String jsonPayload = "{";
-        jsonPayload += "\"device_id\":" + String(device_id) + ",";
-        jsonPayload += "\"location\":\"" + location + "\",";
+        jsonPayload += "\"locationId\":" + String(locationId) + ",";
+        
 
         // --- Particulate Matter Data ---
         if (pmsSerial.available() > 0) {
@@ -229,9 +229,9 @@ void sendData() {
                 int pm10 = makeWord(packet[12], packet[13]);
 
                 jsonPayload += "\"pm25\":" + String(pm25) + ",";
-                jsonPayload += "\"pm25remarks\":\"" + getPM25Remarks(pm25) + "\",";
+                jsonPayload += "\"pm25Remarks\":\"" + getPM25Remarks(pm25) + "\",";
                 jsonPayload += "\"pm10\":" + String(pm10) + ",";
-                jsonPayload += "\"pm10remarks\":\"" + getPM10Remarks(pm10) + "\",";
+                jsonPayload += "\"pm10Remarks\":\"" + getPM10Remarks(pm10) + "\",";
             } 
         }
 
@@ -240,17 +240,17 @@ void sendData() {
         float humidity = dht.readHumidity();
         if (!isnan(temperature) && !isnan(humidity)) {
             jsonPayload += "\"temperature\":" + String(temperature) + ",";
-            jsonPayload += "\"temperature_remarks\":\"" + getTemperatureRemarks(temperature) + "\",";
+            jsonPayload += "\"temperatureRemarks\":\"" + getTemperatureRemarks(temperature) + "\",";
             jsonPayload += "\"humidity\":" + String(humidity) + ",";
-            jsonPayload += "\"humidity_remarks\":\"" + getHumidityRemarks(humidity) + "\",";
+            jsonPayload += "\"humidityRemarks\":\"" + getHumidityRemarks(humidity) + "\",";
         } 
 
         // --- Oxygen Level Data ---
         uint8_t numReadings = 1; // Change this number if you want more readings
         float oxygenLevel = oxygenSensor.getOxygenData(numReadings); // Pass the required argument
         if (!isnan(oxygenLevel)) {
-            jsonPayload += "\"oxygen_concentration\":" + String(oxygenLevel) + ",";
-            jsonPayload += "\"oxygen_remarks\":\"" + getOxygenRemarks(oxygenLevel) + "\"";
+            jsonPayload += "\"oxygen\":" + String(oxygenLevel) + ",";
+            jsonPayload += "\"oxygenRemarks\":\"" + getOxygenRemarks(oxygenLevel) + "\"";
         } 
         jsonPayload += "}";
 
